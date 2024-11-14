@@ -16,80 +16,69 @@ julia --project=jenv
 include("main.jl")
 ```
 
-# Описание симулятора сервиса такси 
+# Description of the taxi service simulator
 
 ## Taxi
 
-На карте всегда $N$ такси. Они меняют свой `state` в зависимости от получения
-заказа.
+There are always $N$ taxis on the map. They change their `state` depending on receiving an order.
 
 * `state = 'idle'`
 
-  * NOW: движется по случайным шагам от точки последнего заказа
-    (либо точки начала рабочего дня &mdash; $t_{simulation} = 0$).
+  * NOW: moves in random steps from the last order point (or the starting point of the workday &mdash; $t_{simulation} = 0$).
 
-  * TODO: движется по модели *двумерного случайного блуждания* (надо много
-    шагов, что реально далеко ушел). Либо [*винеровский
-    процесс*](https://en.wikipedia.org/wiki/Random_walk).
+  * TODO: moves according to the *two-dimensional random walk* model (needs many steps to really go far). Or [*Wiener process*](https://en.wikipedia.org/wiki/Random_walk).
 
 * `state = 'en_route'`
 
-  * NOW: Движется к клиенту по прямой тракетории.  
+  * NOW: Moves to the client in a straight trajectory.
 
-  * TODO: подумать про сложное движение с функцией уменьшения вектора до
-    клиента.
+  * TODO: consider complex movement with a function reducing the vector to the client.
 
 * `state = 'busy'`
-  
-  * NOW: Движется по прямой траектории к `dropoff_location`
 
-  * TODO: Сложное движение до точки.
+  * NOW: Moves in a straight trajectory to `dropoff_location`.
+
+  * TODO: Complex movement to the point.
 
 * `state = 'done'`
 
-  * NOW: Заказ выполнен. Ждет аппрува от процесса **Order**. (то есть
-    фактически, чтобы его вернули в состояние `'idle'`)
- 
+  * NOW: The order is completed. Waiting for approval from the **Order** process. (that is, actually, to return it to the `'idle'` state)
+
 ## Agent
 
-**Agent** &mdash; <u>намеренно</u> усложненный процесс генерации заказов. Это асинхронный
-процесс, который раз в $t \sim P(\lambda)$ создает процесс *Client*. И это в `while true...`
+**Agent** &mdash; <u>intentionally</u> complicated order generation process. This is an asynchronous process that creates a *Client* process every $t \sim P(\lambda)$. And this is in `while true...`
 
-Агенты нужны для более реалистичного появления заказов на карте. Именно с
-точки зрения `timestamp`.
+Agents are needed for a more realistic appearance of orders on the map. Specifically from the perspective of `timestamp`.
 
-***То есть количество Client фактически ничем, кроме `SIM_TIME` не ограничено.***
+***That is, the number of Clients is actually limited only by `SIM_TIME`.***
 
 ## Client
 
-NOW: Процесс, который порождает процесс *Order* и все.
+NOW: A process that generates the *Order* process and that's it.
 
-TODO: Доделать реализацию отмены заказа от клиента с некоторой вероятностью.
-Такая отмена будет работать только пока такси находится в `state = 'en_route'`,
-то есть едет к клиенту.
+TODO: Complete the implementation of order cancellation by the client with some probability. Such cancellation will only work while the taxi is in `state = 'en_route'`, that is, on the way to the client.
 
 ## Order
 
-Процесс обработки заказа от клиента.
+The process of handling an order from the client.
 
-Что делает:
+What it does:
 
-1. находит такси в такси со `state = 'idle'`.
+1. finds a taxi in the taxi with `state = 'idle'`.
 
-2. **(!)** меняет состояние такси `state` в следующей последовательности:
+2. **(!)** changes the taxi's state `state` in the following sequence:
 
-`'idle'` → `'en_route'` → `'busy'` → **(waits until the taxi's state becomes `'done'`)** → `'idle'`.  
+`'idle'` → `'en_route'` → `'busy'` → **(waits until the taxi's state becomes `'done'`)** → `'idle'`.
 
-Как только такси достигает состояния `'idle'`, процесс **завершается**.
+As soon as the taxi reaches the `'idle'` state, the process **ends**.
 
 **END.**
 
-Все это в зависимости от местоположения таксиста, его действий (см. выше в
-[Taxi](#taxi))
+All this depends on the location of the taxi driver, their actions (see above in [Taxi](#taxi))
 
 # Diagram
 
-Примерный принцип работы
+Approximate principle of operation
 
 ```mermaid
 flowchart TD
