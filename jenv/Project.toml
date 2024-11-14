@@ -1,0 +1,7 @@
+[deps]
+ConcurrentSim = "6ed1e86c-fcaf-46a9-97e0-2b26a2cdb499"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+NearestNeighbors = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
+ResumableFunctions = "c5292f4c-5179-55e1-98c5-05642aab7184"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
