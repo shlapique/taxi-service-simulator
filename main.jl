@@ -64,19 +64,44 @@ end
 
 function log_event(event_type::String, time::Float64, details::Dict)
     if event_type == "taxi_location_update"
-        event = Dict("event_type" => event_type, "timestamp" => time, "details" => details)
+        event = Dict("event_type" => event_type, "timestamp" => round(time, digits=3), "details" => details)
         open(config["TELEM_LOG_FILE"], "a") do file
             println(file, JSON.json(event))
         end
+    elseif event_type == "client_online"
+        event = Dict("event_type" => event_type, "timestamp" => round(time, digits=3), "details" => details)
+        open(config["CLIENT_FILE"], "a") do file
+            println(file, JSON.json(event))
+        end
+    elseif event_type == "ride_accept"
+        event = Dict("event_type" => event_type, "timestamp" => round(time, digits=3), "details" => details)
+        open(config["RIDE_ACCEPT_FILE"], "a") do file
+            println(file, JSON.json(event))
+        end
+    elseif event_type == "ride_pending"
+        event = Dict("event_type" => event_type, "timestamp" => round(time, digits=3), "details" => details)
+        open(config["RIDE_PEND_FILE"], "a") do file
+            println(file, JSON.json(event))
+        end
+    elseif event_type == "ride_request"
+        event = Dict("event_type" => event_type, "timestamp" => round(time, digits=3), "details" => details)
+        open(config["RIDE_REQ_FILE"], "a") do file
+            println(file, JSON.json(event))
+        end
+    elseif event_type == "taxi_state_change"
+        event = Dict("event_type" => event_type, "timestamp" => round(time, digits=3), "details" => details)
+        open(config["TAXI_STATE_FILE"], "a") do file
+            println(file, JSON.json(event))
+        end
     else
-        event = Dict("event_type" => event_type, "timestamp" => time, "details" => details)
+        event = Dict("event_type" => event_type, "timestamp" => round(time, digits=3), "details" => details)
         open(config["EVENT_LOG_FILE"], "a") do file
             println(file, JSON.json(event))
         end
     end
 end
 
-# FIXME
+
 function find_nearest_idle_taxi(p::Point)::Union{Taxi, Nothing}
     nearest_indices, distancies = knn(kdtree, [p.x, p.y], config["NEAREST_TAXI_POOL"], true)
 
@@ -93,7 +118,7 @@ function find_nearest_idle_taxi(p::Point)::Union{Taxi, Nothing}
     return nothing
 end
 
-@resumable function move_towards(t::Taxi, target::Point, speed::Float64)
+function move_towards(t::Taxi, target::Point, speed::Float64)
     dx, dy = target.x - t.location.x, target.y - t.location.y
     distance = hypot(dx, dy)
     if distance <= speed
@@ -159,7 +184,7 @@ end
                                                      "status" => ord.status,
                                                      "pickup_location" => point_to_dict(ord.pickup_location),
                                                      "dropoff_location" => point_to_dict(ord.dropoff_location)))
-            @yield timeout(env, 2)
+            @yield timeout(env, 10)
         else
             ord.taxi = nearest_taxi
             nearest_taxi.pickup_location = ord.pickup_location
@@ -197,7 +222,7 @@ end
                                                            "state" => t.state,
                                                            "location" => point_to_dict(t.location)))
         if t.state == :idle 
-            @yield timeout(env, 5)
+            @yield timeout(env, 10)
             t.location.x+= randn() * 10
             t.location.y += randn() * 10
         elseif t.state == :en_route
@@ -205,24 +230,24 @@ end
                                                           "state" => t.state))
 
             while (t.location != t.pickup_location)
-                move_towards(t, t.pickup_location, 0.5)
+                move_towards(t, t.pickup_location, config["TAXI_SPEED"])
                 log_event("taxi_location_update", now(env), Dict("id" => t.id,
-                                                                   "state" => t.state,
-                                                                   "location" => point_to_dict(t.location)))
-                @yield timeout(env, 2.0)
+                                                                 "state" => t.state,
+                                                                 "location" => point_to_dict(t.location)))
+                @yield timeout(env, 5.0)
             end
             t.state = :busy
         elseif t.state == :busy 
             log_event("taxi_state_change", now(env), Dict("id" => t.id,
                                                           "state" => t.state))
             while (t.location != t.dropoff_location)
-                move_towards(t, t.dropoff_location, 0.5)
+                move_towards(t, t.dropoff_location, config["TAXI_SPEED"])
                 log_event("taxi_location_update", now(env), Dict("id" => t.id,
-                                                                   "state" => t.state,
-                                                                   "location" => point_to_dict(t.location)))
-                @yield timeout(env, 2.0)
-                t.state = :done
+                                                                 "state" => t.state,
+                                                                 "location" => point_to_dict(t.location)))
+                @yield timeout(env, 5.0)
             end
+            t.state = :done
         elseif t.state == :done
             @yield timeout(env, 2)
         end

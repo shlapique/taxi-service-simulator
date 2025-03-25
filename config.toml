@@ -1,10 +1,17 @@
-NUM_AGENTS = 2
-NUM_TAXIS = 100
-MAP_SIZE = [5000, 5000]
-LAMBDA = 0.5
-SIM_TIME = 1000
+SIM_TIME = 20000
+
+NUM_AGENTS = 3
+NUM_TAXIS = 12000
+MAP_SIZE = [8000, 8000]
+LAMBDA = 0.65
 MAX_ATTEMPTS = 5
 NEAREST_TAXI_POOL = 10
+TAXI_SPEED = 20.0
 
-EVENT_LOG_FILE = "taxi_events.json"
 TELEM_LOG_FILE = "telem.json"
+RIDE_PEND_FILE = "ride_wait.json"
+RIDE_REQ_FILE = "ride_req.json"
+RIDE_ACCEPT_FILE = "ride_acc.json"
+TAXI_STATE_FILE = "taxi_state.json"
+CLIENT_FILE = "clients.json"
+EVENT_LOG_FILE = "ride_done.json"
